@@ -1,0 +1,75 @@
+﻿@page "/"
+@inject MessageService messageService
+
+<h1>Simple Blazor Chat</h1>
+
+<div class="row">
+    <div class="col-1">
+
+    </div>
+    <div class="col-2">
+        <input type="text" class="form-control" placeholder="Name" @bind="Name"/>
+    </div>
+    <div class="col-6">
+        <input type="text"  @onkeypress="SendMessageKey" class="form-control" @bind:event="oninput" @bind="currentMessage"/>
+    </div>
+    <div class="col-2">
+        <button class="btn btn-block btn-primary" @onclick="SendMessage">Send</button>
+    </div>
+</div>
+<div class="row">
+    @foreach (var msg in Messages)
+    {
+        <div class="col-8">
+            <div class="text-primary">@(msg.Name): @msg.Message</div>
+        </div>
+        <div class="col-4" style="text-align:right">
+            <div class="text-primary">@msg.Timestamp</div>
+        </div>
+    }
+</div>
+
+
+@code{
+    List<ChatMessage> Messages = new List<ChatMessage>();
+    string currentMessage = "";
+    string Name = "";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            messageService.NewChat += NewChatMessage;
+        }
+    }
+
+    public void NewChatMessage(ChatMessage msg)
+    {
+        InvokeAsync(() =>
+        {
+            Messages.Insert(0, msg);
+            this.StateHasChanged();
+        });
+    }
+
+    public void SendMessage()
+    {
+        var msg = new ChatMessage()
+        {
+            Name = Name,
+            Timestamp = DateTime.Now,
+            Message = currentMessage
+        };
+        currentMessage = "";
+        messageService.sendNewMessage(msg);
+        this.StateHasChanged();
+    }
+
+    public void SendMessageKey(KeyboardEventArgs e)
+    {
+        if(e.Key == "Enter")
+        {
+            SendMessage();
+        }
+    }
+}
